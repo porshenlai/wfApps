@@ -117,6 +117,7 @@ SCRIPT.value = class extends Apps.mod_template
 	}	// check_answer 檢驗答案
 
 	async answer (elem) {
+		console.log("ANSWER",elem);
 		const p=Apps.E(elem).trace('.mod_quiz');
 		switch (p.dataset.qtype) {
 		case 's':
@@ -161,6 +162,23 @@ SCRIPT.value = class extends Apps.mod_template
 		};
 		return JSON.stringify(await ra(qes));
 	}	// getJSON 轉換題目為 JSON 字串
+
+	async applyJSON (e,v) {
+		const sqs = await this.getQuizArray (e);
+		if (Array.isArray(v[0])) {
+			for (let i=0;i<sqs.length;i++)
+				await this.applyJSON(sqs[i],v[i]);
+		} else {
+			for (let a of v)
+				await this.answer(e.querySelector(`[data-kh="${a}"]`));
+		}
+	}
+
+	async resetQs (qes) {
+		if (!Array.isArray(qes)) qes=[qes];
+		for (let qe of qes)
+			Array.from(qe.querySelectorAll('.QS')).forEach((e)=>e.classList.remove('QS'));
+	}
 
 	async getHTML (qes) {
 		let qs = '';
@@ -208,6 +226,13 @@ SCRIPT.value = class extends Apps.mod_template
 					"doc" : ()=>document.body
 				}[te]();
 			} catch (x) { te = document.body.querySelector(te); }
+
+		return Array.from(te.querySelectorAll('.mod_quiz')).filter((e)=>{
+			for (e=e.parentNode; te!==e; e=e.parentNode)
+				if (e.classList.contains('mod_quiz')) return false;
+			return true;
+		});
+/*
 		let tmp=te.cloneNode(true),rst=[];
 		while (true) {
 			const q = tmp.querySelector('.mod_quiz');
@@ -216,14 +241,8 @@ SCRIPT.value = class extends Apps.mod_template
 			q.parentNode.removeChild(q);
 		}
 		return rst;
+*/
 	}	// getQuizArray 取得問題集陣列
-
-	async applyJSON(ajs, target=document.body) {
-		//js=[];
-		const qs = await this.getQuizArray(target);
-		for (let i=0; i<qs.length; i++)
-			for (let a of ajs) qs[i].querySelector(`[data-kh="${a}"]`).click();
-	}
 
 	async download (elme, target, format='DLC') {
 		try {
@@ -248,6 +267,22 @@ SCRIPT.value = class extends Apps.mod_template
 			alert(rst.status+'\n'+rst.client_ip);
 		} catch (x) { console.log("Error", x); }
 	}	// commit
+
+	async verify (elem, url) {
+		let doc={};
+		if (Array.isArray(url))
+			doc=url;
+		else {
+			console.log("Not implemented:", url);
+			return;
+		}
+		let qzs=await this.getQuizArray("doc");
+		await this.resetQs(qzs);
+		for (let i=0; i<qzs.length; i++)
+			await this.applyJSON(qzs[i], doc[i]);
+		//console.log("VERIFY:",doc,qzs);
+				
+	}	// calc_score
 };
 
 })(document.currentScript);

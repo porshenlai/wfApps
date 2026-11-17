@@ -342,7 +342,10 @@ class D {
 			};
 		const response = await fetch(url, reqbody);
 		if (response.ok) {
-			Object.assign(this.D,await response.json());
+			let d = await response.json();
+			if(Object.keys(this.D).length>0)
+				Object.update(this.D,d);
+			else this.D = d;
 			return this.D;
 		}
 	}
