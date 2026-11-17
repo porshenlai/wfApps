@@ -110,14 +110,14 @@ SCRIPT.value = class extends Apps.mod_template
 			.filter((s)=>p.exec(s))
 			.forEach((s)=>qe.classList.remove(s));
 
-		qe.dataset.scoreRatio=matched/qs.length;
+		qe.dataset.score_ratio=matched/qs.length;
 		if (qe.querySelector('.QS')) {
 			if (matched >= qs.length) 
 				qe.classList.add('QRO');
 			else if (qe.dataset.qtype==='s')
 				qe.classList.add('QR');
 		}
-		return qe.dataset.scoreRatio;
+		return qe.dataset.score_ratio;
 	}	// check_answer 檢驗答案
 
 	async answer (elem) {
@@ -175,6 +175,20 @@ SCRIPT.value = class extends Apps.mod_template
 			for (let a of v)
 				await this.answer(e.querySelector(`[data-kh="${a}"]`));
 		}
+	}
+
+	async calcScore (te) {
+		let qs = Array.from(document.body.querySelectorAll('.mod_quiz')), score;
+		score = qs.reduce((s,e)=>{
+			if (e.dataset.qtype!=='c') {
+				if (e.dataset.score_ratio!==undefined)
+					s[0] += (parseFloat(e.dataset.score_ratio) < 1 ? 0 : 1);
+				s[1] += 1;
+			}
+			return s;
+		},[0,0]);
+		console.log(score);
+		return 1000*score[0]/score[1];
 	}
 
 	async resetQs (qes) {
@@ -283,8 +297,7 @@ SCRIPT.value = class extends Apps.mod_template
 		await this.resetQs(qzs);
 		for (let i=0; i<qzs.length; i++)
 			await this.applyJSON(qzs[i], doc[i]);
-		//console.log("VERIFY:",doc,qzs);
-				
+		console.log(await this.calcScore(document.body));
 	}	// calc_score
 };
 
