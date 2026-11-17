@@ -88,36 +88,39 @@ SCRIPT.value = class extends Apps.mod_template
 	}	// configure 繪製設定面板
 
 	async check_answer (qe) {
-		let ans='QR-';
+		let qs = Array.from(qe.querySelectorAll('.mod_quiz_answer')), matched = 0;
 
 		if (this.Secret) {
 			let r = true;
 			switch (qe.dataset.qtype) {
 			case 's': case 'm':
-				for (let oe of Array.from(qe.querySelectorAll('.mod_quiz_answer')))
-					r &&= (await this.hash_control(oe, oe.classList.contains('QS') ? 'O' : 'X'));
+				for (let oe of qs)
+					if (await this.hash_control(oe, oe.classList.contains('QS') ? 'O' : 'X'))
+						matched += 1;
 				break;
 			case 'sort':
-				for (let oes=Array.from(qe.querySelectorAll('.mod_quiz_answer')), ix=0; ix<oes.length; ix++) {
-					if (await this.hash_control(oes[ix], '-')) continue;
-					r &&= (oes[ix].classList.contains('QS') && (await this.hash_control(oes[ix], `${ix}`)));
-				}
+				for (let ix=0; ix<qs.length; ix++)
+					if (await this.hash_control(qs[ix], qs[ix].classList.contains('QS') ? `${ix}` : '-'))
+						matched += 1;
 				break;
 			}
-			ans = r ? 'QRO' : 'QRX';
-		} else if (qe.dataset.qtype==='s') {
-			ans=qe.querySelector('.mod_quiz_answer.QS') ? 'QR' : 'QR-';
 		}
 		const p=/QR?/;
 		Array.from(qe.classList)
 			.filter((s)=>p.exec(s))
 			.forEach((s)=>qe.classList.remove(s));
-		qe.classList.add(ans);
-		return ans;
+
+		qe.dataset.scoreRatio=matched/qs.length;
+		if (qe.querySelector('.QS')) {
+			if (matched >= qs.length) 
+				qe.classList.add('QRO');
+			else if (qe.dataset.qtype==='s')
+				qe.classList.add('QR');
+		}
+		return qe.dataset.scoreRatio;
 	}	// check_answer 檢驗答案
 
 	async answer (elem) {
-		console.log("ANSWER",elem);
 		const p=Apps.E(elem).trace('.mod_quiz');
 		switch (p.dataset.qtype) {
 		case 's':
