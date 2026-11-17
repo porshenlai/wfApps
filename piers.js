@@ -333,6 +333,20 @@ class D {
 		return JSON.stringify(this.D);
 	}	// toString
 
+	async fetch (url, reqbody=undefined) {
+		if (reqbody && (!reqbody("method")))
+			reqbody = {
+				"method": "POST",
+				"headers": { "Content-Type": "application/json" },
+				"body": "string"===typeof(reqbody) ? reqbody : JSON.stringify(reqbody)
+			};
+		const response = await fetch(url, reqbody);
+		if (response.ok) {
+			Object.assign(this.D,await response.json());
+			return this.D;
+		}
+	}
+
 	// await (new D({"url":"網址","payload":{負載}})).request(R)
 	async request (base) {
 		if (this.D.url) {
