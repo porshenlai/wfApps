@@ -88,20 +88,25 @@ SCRIPT.value = class extends Apps.mod_template
 	}	// configure 繪製設定面板
 
 	async check_answer (qe) {
-		let qs = Array.from(qe.querySelectorAll('.mod_quiz_answer')), matched = 0;
+		let qs = Array.from(qe.querySelectorAll('.mod_quiz_answer')), matched = 0, total = 0;
 
 		if (this.Secret) {
 			let r = true;
 			switch (qe.dataset.qtype) {
 			case 's': case 'm':
 				for (let oe of qs)
-					if (await this.hash_control(oe, oe.classList.contains('QS') ? 'O' : 'X'))
-						matched += 1;
+					if (await this.hash_control(oe, 'O')) {
+						total += 1;
+						if (oe.classList.contains('QS'))
+							matched += 1;
+					}
 				break;
 			case 'sort':
-				for (let ix=0; ix<qs.length; ix++)
+				for (let ix=0; ix<qs.length; ix++) {
+					total += 1;
 					if (await this.hash_control(qs[ix], qs[ix].classList.contains('QS') ? `${ix}` : '-'))
 						matched += 1;
+				}
 				break;
 			}
 		}
@@ -110,9 +115,9 @@ SCRIPT.value = class extends Apps.mod_template
 			.filter((s)=>p.exec(s))
 			.forEach((s)=>qe.classList.remove(s));
 
-		qe.dataset.score_ratio=matched/qs.length;
+		qe.dataset.score_ratio=matched/total;
 		if (qe.querySelector('.QS')) {
-			if (matched >= qs.length) 
+			if (matched >= total) 
 				qe.classList.add('QRO');
 			else if (qe.dataset.qtype==='s')
 				qe.classList.add('QR');
@@ -149,53 +154,23 @@ SCRIPT.value = class extends Apps.mod_template
 		}
 	}	// answer 答題
 
-	async getJSON (qes) {
-		const ra=async (Qs)=>{
-			let qr=[],qe;
-			for (qe of Qs) {
-				let Q2s = await this.getQuizArray(qe);
-				if (Q2s.length<=0)
-					qr.push(Array.from(qe.querySelectorAll('.mod_quiz_answer.QS')).reduce((r,e)=>{
-						r.push(e.dataset.kh);
-						return r;
-					},[]));
-				else qr.push(await ra(Q2s));
-			}
-			return qr;
-		};
-		return JSON.stringify(await ra(qes));
-	}	// getJSON 轉換題目為 JSON 字串
+	async getQuizArray (root=document.body) {
+		if ('string' === typeof(root))
+			try {
+				root = {
+					"slide" : ()=>Apps.E(elem).trace('section'),
+					"doc" : ()=>document.body
+				}[root]();
+			} catch (x) { root = document.body.querySelector(root); }
 
-	async applyJSON (e,v) {
-		const sqs = await this.getQuizArray (e);
-		if (Array.isArray(v[0])) {
-			for (let i=0;i<sqs.length;i++)
-				await this.applyJSON(sqs[i],v[i]);
-		} else {
-			for (let a of v)
-				await this.answer(e.querySelector(`[data-kh="${a}"]`));
-		}
-	}
-
-	async calcScore (te) {
-		let qs = Array.from(document.body.querySelectorAll('.mod_quiz')), score;
-		score = qs.reduce((s,e)=>{
-			if (e.dataset.qtype!=='c') {
-				if (e.dataset.score_ratio!==undefined)
-					s[0] += (parseFloat(e.dataset.score_ratio) < 1 ? 0 : 1);
-				s[1] += 1;
-			}
-			return s;
-		},[0,0]);
-		console.log(score);
-		return 1000*score[0]/score[1];
-	}
-
-	async resetQs (qes) {
-		if (!Array.isArray(qes)) qes=[qes];
-		for (let qe of qes)
-			Array.from(qe.querySelectorAll('.QS')).forEach((e)=>e.classList.remove('QS'));
-	}
+		return Array.from(
+			root.querySelectorAll('.mod_quiz')
+		).filter((e)=>{
+			for (e=e.parentNode; root!==e; e=e.parentNode)
+				if (e.classList.contains('mod_quiz')) return false;
+			return true;
+		});
+	}	// getQuizArray 取得問題集陣列
 
 	async getHTML (qes) {
 		let qs = '';
@@ -235,31 +210,37 @@ SCRIPT.value = class extends Apps.mod_template
 		}).join('\n');
 	}	// getDLC 轉換題目為 致理數位學院 CSV 字串
 
-	async getQuizArray (te=document.body) {
-		if ('string' === typeof(te))
-			try {
-				te = {
-					"slide" : ()=>Apps.E(elem).trace('section'),
-					"doc" : ()=>document.body
-				}[te]();
-			} catch (x) { te = document.body.querySelector(te); }
+	async getJSON (qes) {
+		const ra=async (Qs)=>{
+			let qr=[],qe;
+			for (qe of Qs) {
+				let Q2s = await this.getQuizArray(qe);
+				if (Q2s.length<=0)
+					qr.push(Array.from(qe.querySelectorAll('.mod_quiz_answer.QS')).reduce((r,e)=>{
+						r.push(e.dataset.kh);
+						return r;
+					},[]));
+				else qr.push(await ra(Q2s));
+			}
+			return qr;
+		};
+		return JSON.stringify(await ra(qes));
+	}	// getJSON 轉換題目為 JSON 字串
 
-		return Array.from(te.querySelectorAll('.mod_quiz')).filter((e)=>{
-			for (e=e.parentNode; te!==e; e=e.parentNode)
-				if (e.classList.contains('mod_quiz')) return false;
-			return true;
-		});
-/*
-		let tmp=te.cloneNode(true),rst=[];
-		while (true) {
-			const q = tmp.querySelector('.mod_quiz');
-			if (!q) break;
-			rst.push(q);
-			q.parentNode.removeChild(q);
+	async applyJSON (e,v) {
+		if (Array.isArray(v[0])) {
+			const sqs = await this.getQuizArray(e);
+			console.assert(
+				sqs.length===v.length,
+				`the length of quiz(${sqs.length}) and answers(${v.length}) not matched.`
+			);
+			for (let i=0;i<sqs.length;i++)
+				await this.applyJSON(sqs[i],v[i]);
+		} else {
+			for (let a of v)
+				await this.answer(e.querySelector(`[data-kh="${a}"]`));
 		}
-		return rst;
-*/
-	}	// getQuizArray 取得問題集陣列
+	}
 
 	async download (elme, target, format='DLC') {
 		try {
@@ -285,20 +266,76 @@ SCRIPT.value = class extends Apps.mod_template
 		} catch (x) { console.log("Error", x); }
 	}	// commit
 
-	async verify (elem, url) {
-		let doc={};
-		if (Array.isArray(url))
-			doc=url;
-		else {
-			console.log("Not implemented:", url);
-			return;
-		}
+	async verify (elem, doc) {
+		if ('string' === typeof(doc))
+			return console.log("Not implemented:", doc);
+		// clear answers
+		Array.from(
+			document.body.querySelectorAll(".mod_quiz_answer.QS")
+		).forEach((e)=>e.classList.remove('QS'));
+
+		// create quiz list
 		let qzs=await this.getQuizArray("doc");
-		await this.resetQs(qzs);
+		// apply answers to quiz
 		for (let i=0; i<qzs.length; i++)
 			await this.applyJSON(qzs[i], doc[i]);
-		console.log(await this.calcScore(document.body));
-	}	// calc_score
+	}	// verify
+
+	async getScore (root=document.body, maxscore=100) {
+		let qs = Array.from(root.querySelectorAll('.mod_quiz'));
+		let score = qs.filter((q)=>q.dataset.qtype!=='c').reduce((s,e) => {
+			if (e.dataset.score_ratio!==undefined)
+				s[0] += (parseFloat(e.dataset.score_ratio) < 1 ? 0 : 1);
+			s[1] += 1;
+			return s;
+		}, [0,0]);
+		score = maxscore*score[0]/score[1];
+		return score;
+	}	// getScore
+
+	async drawScoreBoard (elem, root) {
+		if ('string'===typeof(root))
+			root = document.body.querySelector(root);
+		console.assert(root,'Root element not found!');
+
+		const D = Apps.D({});
+		if (await D.fetch('__API__/wks/list')) {
+			const d = D.D.list.reduce((r,v)=>{
+				const s=v.split('_');
+				if (!r[s[0]]) r[s[0]]=[];
+				r[s[0]].push(v);
+				return r;
+			}, {}); // {..."ip":[..."fn"]}
+			let ct=[], sty='font-size:100%;';
+			for (let ip of Object.keys(d).sort())
+				ct.push(`<li><select style="${sty}">`
+					+ d[ip].sort((a,b)=>a<b?1:a>b?-1:0).reduce((ct,v)=>{
+						const vs=v.split('_');
+						return ct+`<option value="${v}">${vs[0]} ${vs[2]}</option>`
+					},'')
+					+ `</select><button style="${sty}">&rArr;</button>`
+					+ `<input size="5" readonly style="${sty};text-align:right"></input></li>`
+				);
+			root.innerHTML = '<ul>\n'+ct.join('\n')+'</ul>';
+
+			if (!root.__ClickHandler__)
+				root.addEventListener('click', root.__ClickHandler__ = async (btn) => {
+					if (btn instanceof Event) {
+						btn=btn.target;
+						if (btn.textContent!=='⇒') return;
+					}
+					await (async (bar)=>{
+						const D = Apps.D({});
+						const K = bar.querySelector('select').value;
+						if (await D.fetch('__API__/wks/list?name='+K)) {
+							await this.verify(document.body,D.D);
+							const score = await this.getScore(document.body,100);
+							bar.querySelector("input").value = (Math.floor(score*100)/100);
+						}
+					})(btn.parentNode);
+				});
+		}
+	}	// drawScoreBoard
 };
 
 })(document.currentScript);
