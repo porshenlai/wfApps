@@ -117,7 +117,7 @@ SCRIPT.value = class extends Apps.mod_template
 
 		qe.dataset.score_ratio=matched/total;
 		if (qe.querySelector('.QS')) {
-			if (matched >= total) 
+			if (total>0 && matched >= total) 
 				qe.classList.add('QRO');
 			else if (qe.dataset.qtype==='s')
 				qe.classList.add('QR');
