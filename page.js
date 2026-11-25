@@ -444,6 +444,7 @@ class Player
 
 				const ol = Apps.E('<div id="overlay" data-h="set:Overlay:none"></div>','#overlay').E;
 				// ## 安裝對話框
+				console.log("=================>",Apps.JSPrefix+"page_dialog.html");
 				ol.appendChild(await Apps.R({url:Apps.JSPrefix+"page_dialog.html",cs:"#dialog"}).fetch());
 				if ('aside' in flags) { // 準備 目錄與設定控制列
 					const aside = await Apps.R({url:Apps.JSPrefix+'page_aside.html',cs:'aside'}).fetch();
