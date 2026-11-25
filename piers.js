@@ -431,7 +431,8 @@ class R {
 	}	// fetch
 }
 
-(new E('<link rel="stylesheet" href="/App/piers.css"/>')).join(document.head);
+const csspath=SCRIPT.src.replace(/.js/,".css");
+(new E(`<link rel="stylesheet" href="${csspath}"/>`)).join(document.head);
 SCRIPT.value={
 	B: (...a)=>new B(...a),
 	D: (...a)=>new D(...a),
