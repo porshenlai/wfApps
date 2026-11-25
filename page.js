@@ -145,7 +145,8 @@ class Content
 				}
 			})()
 		};
-		Apps.E('<link rel="stylesheet" href="/App/page.css"></link>').join(document.head);
+		Apps.E('<link rel="stylesheet" href="'+Apps.JSPrefix+'page.css'+'"></link>').join(document.head);
+
 	}	// constructor
 
 	async call_module (elem, mn, ...args)
@@ -438,7 +439,7 @@ class Player
 						this.bindS('PageNumber',cp.querySelector('[data-uid="PageNumber"]'));
 						this.bindS('PageCount',cp.querySelector('[data-uid="PageCount"]'));
 						e.appendChild(cp);
-					})(await Apps.R({url:"/App/page_control.html",cs:"#control"}).fetch());
+					})(await Apps.R({url:Apps.JSPrefix+'page_control.html',cs:"#control"}).fetch());
 
 				const ol = Apps.E('<div id="overlay" data-h="set:Overlay:none"></div>','#overlay').E;
 				// ## 安裝對話框
@@ -811,7 +812,7 @@ class Player
 
 	window.Apps = Object.assign(Apps, window.Apps||{});
 	Apps.Ready.setReady(Apps);
-})(Apps.loadScript(Apps.JSPrefix+"piers.js"));
+})(Apps.loadScript(Apps.JSPrefix+'piers.js'));
 
 document.addEventListener('DOMContentLoaded', async () => {
 	await Apps.Ready;
