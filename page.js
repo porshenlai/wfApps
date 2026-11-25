@@ -145,6 +145,7 @@ class Content
 				}
 			})()
 		};
+		console.log(Apps.JSPrefix+"=========================",document.head);
 		Apps.E('<link rel="stylesheet" href="'+Apps.JSPrefix+'page.css'+'"></link>').join(document.head);
 
 	}	// constructor
