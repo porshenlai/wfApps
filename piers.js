@@ -334,7 +334,7 @@ class D {
 	}	// toString
 
 	async fetch (url, reqbody=undefined) {
-		if (reqbody && (!reqbody("method")))
+		if (reqbody && (!reqbody["method"]))
 			reqbody = {
 				"method": "POST",
 				"headers": { "Content-Type": "application/json" },
