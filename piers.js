@@ -1,5 +1,7 @@
 ((SCRIPT) => {
 
+const resolve=(n)=>SCRIPT.src.replace(/\?.*$/,'').replace(/\/[^\/]*$/,'/'+n);
+
 function enableDOMConsole () {
 	const originalLog = console.log;
 	console.log = function(...args) {
@@ -431,12 +433,14 @@ class R {
 	}	// fetch
 }
 
-(new E('<link rel="stylesheet" href="/App/piers.css"/>')).join(document.head);
+(new E(`<link rel="stylesheet" href="${resolve("piers.css")}"/>`)).join(document.head);
+
 SCRIPT.value={
 	B: (...a)=>new B(...a),
 	D: (...a)=>new D(...a),
 	E: (...a)=>new E(...a),
 	R: (...a)=>new R(...a),
+	resolve: resolve,
 	upload: async(type,mul=false)=>await B.upload()
 };
 SCRIPT.value.E.Class = E;

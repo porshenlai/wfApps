@@ -145,7 +145,7 @@ class Content
 				}
 			})()
 		};
-		Apps.E('<link rel="stylesheet" href="/App/page.css"></link>').join(document.head);
+		Apps.E(`<link rel="stylesheet" href="${Apps.resolve("page.css")}"></link>`).join(document.head);
 	}	// constructor
 
 	async call_module (elem, mn, ...args)
@@ -227,10 +227,11 @@ class Content
 							return r;
 						},{}) : {}
 					const Defs={
-						bg:(v)=>['background',((vs)=>{
-							if (vs[1]) vs[1]=`url(${vs[1]}) no-repeat center center/${ vs[0] ? 'contain' : 'cover' }`;
-							return vs.join(' ');
-						})(v.split(':'))],
+						bg:(v)=>['background',[
+							`url(${v.replace(/^[^:]*:/,'')})`,
+							"no-repeat",
+							`center center/${v.replace(/:.*$/,'')||"cover"}`
+						].join(' ')]
 					}
 					for (let n in nvs) {
 						let [sn,sv] = n in Defs ? Defs[n](nvs[n]) : [n,nvs[n]];
@@ -438,13 +439,13 @@ class Player
 						this.bindS('PageNumber',cp.querySelector('[data-uid="PageNumber"]'));
 						this.bindS('PageCount',cp.querySelector('[data-uid="PageCount"]'));
 						e.appendChild(cp);
-					})(await Apps.R({url:"/App/page_control.html",cs:"#control"}).fetch());
+					})(await Apps.R({url:Apps.resolve("page_control.html"),cs:"#control"}).fetch());
 
 				const ol = Apps.E('<div id="overlay" data-h="set:Overlay:none"></div>','#overlay').E;
 				// ## 安裝對話框
-				ol.appendChild(await Apps.R({url:"/App/page_dialog.html",cs:"#dialog"}).fetch());
+				ol.appendChild(await Apps.R({url:Apps.resolve("page_dialog.html"),cs:"#dialog"}).fetch());
 				if ('aside' in flags) { // 準備 目錄與設定控制列
-					const aside = await Apps.R({url:'/App/page_aside.html',cs:'aside'}).fetch();
+					const aside = await Apps.R({url:Apps.resolve("page_aside.html"),cs:'aside'}).fetch();
 					ol.appendChild(aside);
 					// ## 側板內容綁定
 					this.bindS('PageNumber', aside.querySelector('[data-uid="Aside:Pager"] input'));
@@ -811,7 +812,7 @@ class Player
 
 	window.Apps = Object.assign(Apps, window.Apps||{});
 	Apps.Ready.setReady(Apps);
-})(Apps.loadScript(Apps.JSPrefix+"piers.js"));
+})(Apps.loadScript(CS.src.replace(/\?.*$/,'').replace(/\/[^\/]*$/,'/piers.js')));
 
 document.addEventListener('DOMContentLoaded', async () => {
 	await Apps.Ready;

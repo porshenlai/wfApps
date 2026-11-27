@@ -131,7 +131,7 @@ table.nvtable tbody th, table.nv tbody th
 table.nvtable tbody td, table.nv tbody td
 { border:0; padding:0 4px; border-bottom:1px solid silver; text-align:left; vertical-align:top; }
 
-table.chart { border:1px solid silver; padding:4px; }
+table.chart { margin:auto; border:1px solid silver; padding:4px; }
 table.chart th { border:2px solid black; padding:4px 20px; }
 table.chart th.R { border-radius:12px; }
 table.chart td { border:0; padding:0; text-align:center; vertical-align:middle; }
